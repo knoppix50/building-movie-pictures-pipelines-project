@@ -63,6 +63,20 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # --- 🚀 PASO MÁGICO: OBTENER URL DEL BACKEND DINÁMICAMENTE ---
+      - name: Obtener URL pública del Backend de Kubernetes
+        id: get-backend-url
+        run: |
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+          
+          # Esperar un momento a que el servicio responda y extraer el External-IP
+          BACKEND_URL=$(kubectl get svc backend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "La URL del backend detectada es: http://$BACKEND_URL"
+          
+          # Guardar la variable para usarla en los siguientes pasos
+          echo "DYNAMIC_BACKEND_URL=http://$BACKEND_URL" >> $GITHUB_ENV
+
+
       - name: Construir y Subir Imagen Docker a ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -70,7 +84,7 @@ jobs:
         run: |
           cd starter/frontend
           docker build \
-            --build-arg REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL_PROD }} \
+            --build-arg REACT_APP_MOVIE_API_URL=${{ env.DYNAMIC_BACKEND_URL }} \
             --tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
 
