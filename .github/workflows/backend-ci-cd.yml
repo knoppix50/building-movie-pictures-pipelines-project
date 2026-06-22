@@ -11,7 +11,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: mp-backend # Confirma este nombre con tu salida de Terraform
+  ECR_REPOSITORY: "970343065599.dkr.ecr.us-east-1.amazonaws.com/backend" # Confirma este nombre con tu salida de Terraform
   EKS_CLUSTER: cluster
 
 jobs:
