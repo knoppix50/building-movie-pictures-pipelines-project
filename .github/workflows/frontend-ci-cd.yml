@@ -13,7 +13,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: frontend # Confirma este nombre con tu salida de Terraform
   EKS_CLUSTER: cluster
-  REACT_APP_MOVIE_API_URL: http://localhost:5000
+  REACT_APP_MOVIE_API_URL: a9312983dcc284ee9b6660c9ceb42355-1090865682.us-east-1.elb.amazonaws.com
 
 jobs:
   # --- PASO 1: INTEGRACIÓN CONTINUA (CI) ---
