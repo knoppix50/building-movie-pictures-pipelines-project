@@ -1,24 +1,18 @@
-name: Frontend CI/CD Pipeline
+name: Frontend Continuous Deployment
 
 on:
   push:
     branches: [ main ]
-    paths: [ 'starter/frontend/**' ] # Solo si cambia el frontend
-  pull_request:
-    branches: [ main ]
     paths: [ 'starter/frontend/**' ]
-  workflow_dispatch: # Permite ejecutarlo manualmente
+  workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: frontend # Confirma este nombre con tu salida de Terraform
+  ECR_REPOSITORY: frontend
   EKS_CLUSTER: cluster
-  REACT_APP_MOVIE_API_URL: http://localhost:5000
-  REACT_APP_MOVIE_API_URL_PROD: http://a9312983dcc284ee9b6660c9ceb42355-1090865682.us-east-1.elb.amazonaws.com
 
 jobs:
-  # --- PASO 1: INTEGRACIÓN CONTINUA (CI) ---
-  lint-and-test:
+  lint:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -26,56 +20,60 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
-
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: starter/frontend/package-lock.json
-
       - name: Instalar dependencias
         run: npm ci
-
       - name: Ejecutar Linter (Análisis Estático)
         run: npm run lint
 
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/frontend
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
       - name: Ejecutar Pruebas Unitarias
         run: CI=true npm test
 
-  # --- PASO 2: DESPLIEGUE CONTINUO (CD) ---
   build-and-deploy:
-    needs: lint-and-test
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
-
       - name: Configurar credenciales de AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: Iniciar sesión en Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # --- 🚀 PASO MÁGICO: OBTENER URL DEL BACKEND DINÁMICAMENTE ---
+      # --- 🚀 TU PASO MÁGICO REUBICADO SANO Y SALVO ---
       - name: Obtener URL pública del Backend de Kubernetes
         id: get-backend-url
         run: |
           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
-          
-          # Esperar un momento a que el servicio responda y extraer el External-IP
           BACKEND_URL=$(kubectl get svc backend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "La URL del backend detectada es: http://$BACKEND_URL"
-          
-          # Guardar la variable para usarla en los siguientes pasos
           echo "DYNAMIC_BACKEND_URL=http://$BACKEND_URL" >> $GITHUB_ENV
-
 
       - name: Construir y Subir Imagen Docker a ECR
         env:

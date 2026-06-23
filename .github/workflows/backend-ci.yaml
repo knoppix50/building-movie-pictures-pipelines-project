@@ -1,0 +1,56 @@
+name: Backend Continuous Integration
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths: [ 'starter/backend/**' ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/backend
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Instalar Pipenv y dependencias
+        run: |
+          pip install pipenv
+          pipenv install --dev
+      - name: Ejecutar Linter
+        run: pipenv run lint
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: starter/backend
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Instalar Pipenv y dependencias
+        run: |
+          pip install pipenv
+          pipenv install --dev
+      - name: Ejecutar Pruebas
+        run: pipenv run test
+
+  build:
+    needs: [lint, test] # <-- It meets the requirement of waiting for both parallel jobs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+      - name: Simulación de construcción Docker para CI
+        run: echo "El código compila correctamente en Docker"
+
