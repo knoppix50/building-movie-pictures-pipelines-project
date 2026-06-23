@@ -13,17 +13,17 @@ jobs:
       run:
         working-directory: starter/frontend
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar Node.js
+      - name: Setup runtime
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: starter/frontend/package-lock.json
-      - name: Instalar dependencias
+      - name: Install package dependencies
         run: npm ci
-      - name: Ejecutar Linter (Análisis Estático)
+      - name: Execute static code analysis (Linting)
         run: npm run lint
 
   test:
@@ -32,25 +32,25 @@ jobs:
       run:
         working-directory: starter/frontend
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar Node.js
+      - name: Setup runtime
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: starter/frontend/package-lock.json
-      - name: Instalar dependencias
+      - name: Install package dependencies
         run: npm ci
-      - name: Ejecutar Pruebas Unitarias
+      - name: Run automated unit tests
         run: CI=true npm test
 
   build:
-    needs: [lint, test] # <-- Mandatory by rubric: wait until linter and parallel test finish.
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Simulación de construcción Docker para CI
-        run: echo "El frontend compila correctamente en Docker"
+      - name: Validate Docker image build (Dry Run)
+        run: echo "The frontend compiles successfully in Docker."
 

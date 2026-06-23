@@ -18,17 +18,17 @@ jobs:
       run:
         working-directory: starter/frontend
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar Node.js
+      - name: Setup Node.js runtime
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: starter/frontend/package-lock.json
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: npm ci
-      - name: Ejecutar Linter (Análisis Estático)
+      - name: Run static code analysis (Lint)
         run: npm run lint
 
   test:
@@ -37,45 +37,43 @@ jobs:
       run:
         working-directory: starter/frontend
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar Node.js
+      - name: Setup Node.js runtime
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: starter/frontend/package-lock.json
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: npm ci
-      - name: Ejecutar Pruebas Unitarias
+      - name: Run automated unit tests
         run: CI=true npm test
 
   build-and-deploy:
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar credenciales de AWS
+      - name: Authenticate with AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      - name: Iniciar sesión en Amazon ECR
+      - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # --- 🚀 TU PASO MÁGICO REUBICADO SANO Y SALVO ---
-      - name: Obtener URL pública del Backend de Kubernetes
+      - name: Discover backend service URL
         id: get-backend-url
         run: |
           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
           BACKEND_URL=$(kubectl get svc backend -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "La URL del backend detectada es: http://$BACKEND_URL"
           echo "DYNAMIC_BACKEND_URL=http://$BACKEND_URL" >> $GITHUB_ENV
 
-      - name: Construir y Subir Imagen Docker a ECR
+      - name: Build and push Docker image to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -86,7 +84,7 @@ jobs:
             --tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
 
-      - name: Desplegar en Kubernetes (EKS)
+      - name: Deploy frontend to EKS via Kustomize
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}

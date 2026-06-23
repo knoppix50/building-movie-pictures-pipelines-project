@@ -13,17 +13,18 @@ jobs:
       run:
         working-directory: starter/backend
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar Python
+      - name: Setup runtime
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - name: Instalar Pipenv y dependencias
+          cache: 'pipenv'
+      - name: Install package dependencies
         run: |
           pip install pipenv
           pipenv install --dev
-      - name: Ejecutar Linter
+      - name: Execute static code analysis (Linting)
         run: pipenv run lint
 
   test:
@@ -32,25 +33,26 @@ jobs:
       run:
         working-directory: starter/backend
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar Python
+      - name: Setup runtime
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - name: Instalar Pipenv y dependencias
+          cache: 'pipenv'
+      - name: Install package dependencies
         run: |
           pip install pipenv
           pipenv install --dev
-      - name: Ejecutar Pruebas
+      - name: Run automated unit tests
         run: pipenv run test
 
   build:
-    needs: [lint, test] # <-- It meets the requirement of waiting for both parallel jobs
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Simulación de construcción Docker para CI
-        run: echo "El código compila correctamente en Docker"
+      - name: Validate Docker image build (Dry run)
+        run: echo "The code compiles correctly in Docker."
 

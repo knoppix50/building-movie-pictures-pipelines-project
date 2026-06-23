@@ -12,24 +12,24 @@ env:
   EKS_CLUSTER: cluster
 
 jobs:
-  # The rubric requires that the CD also pass lint and test before deployment
   lint:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: starter/backend
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar Python
+      - name: Setup runtime
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - name: Instalar Pipenv y dependencias
+          cache: 'pipenv'
+      - name: Install package dependencies
         run: |
           pip install pipenv
           pipenv install --dev
-      - name: Ejecutar Linter
+      - name: Execute static code analysis (Linting)
         run: pipenv run lint
 
   test:
@@ -38,35 +38,36 @@ jobs:
       run:
         working-directory: starter/backend
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar Python
+      - name: Setup runtime
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - name: Instalar Pipenv y dependencias
+          cache: 'pipenv'
+      - name: Install package dependencies
         run: |
           pip install pipenv
           pipenv install --dev
-      - name: Ejecutar Pruebas
+      - name: Run automated unit tests
         run: pipenv run test
 
   build-and-deploy:
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del código
+      - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Configurar credenciales de AWS
+      - name: Authenticate with AWS IAM Provider
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      - name: Iniciar sesión en Amazon ECR
+      - name: Login to Amazon Elastic Container Registry (ECR)
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-      - name: Construir y Subir Imagen Docker a ECR
+      - name: Build and publish Docker image artifact to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -74,7 +75,7 @@ jobs:
           cd starter/backend
           docker build --tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
-      - name: Desplegar en Kubernetes (EKS)
+      - name: Deploy container updates to Amazon EKS via Kustomize
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
