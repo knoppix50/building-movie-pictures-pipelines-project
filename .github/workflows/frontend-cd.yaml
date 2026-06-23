@@ -91,6 +91,7 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
           cd starter/frontend/k8s
+          kubectl delete deployment frontend --namespace default --ignore-not-found
           kustomize edit set image frontend=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
           kustomize build . | kubectl apply -f -
 
