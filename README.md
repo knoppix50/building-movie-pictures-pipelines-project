@@ -81,3 +81,14 @@ The entire system is verified and running under the following public endpoints:
 * **Endpoint:** `http://aee6ae31e950d43da8e517d7b18dc8ec-823855176.us-east-1.elb.amazonaws.com/`
 * **Behavior:** Successfully renders the UI and fetches live data from the backend API.
 * *Artifact reference: See attached `frontend-working.png` (Web Browser view)*
+
+
+## Known Issues & Future Improvements
+
+### 1. Terraform Destruction Deadlocks (EKS Lifecycle)
+* **The Issue:** Running `terraform destroy` frequently hangs or fails when tearing down the EKS cluster. This happens because Kubernetes dynamically provisions cloud resources (such as AWS Elastic Load Balancers and Elastic Network Interfaces) that are outside of Terraform's state file. When Terraform attempts to delete the VPC or subnets, AWS blocks the operation due to these active orphan dependencies.
+* **The Fix/Workaround:** Before running `terraform destroy`, all Kubernetes service resources of type `LoadBalancer` and active Ingress controllers must be manually deleted via `kubectl delete` to release the cloud network interfaces.
+* **Future Migration Strategy:** To natively resolve these infrastructure dependency loops, a future improvement would be migrating the Infrastructure as Code (IaC) layer from Terraform to **AWS CDK (Cloud Development Kit) utilizing AWS EKS Blueprints**. Being a native AWS programmatic framework, CDK provides native mechanisms to better coordinate the deletion of Kubernetes-managed AWS components alongside the core infrastructure stack.
+
+
+
