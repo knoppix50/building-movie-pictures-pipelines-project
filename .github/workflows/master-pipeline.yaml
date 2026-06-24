@@ -12,21 +12,17 @@ jobs:
     uses: ./.github/workflows/backend-ci.yaml
     secrets: inherit
 
+  job-frontend-ci: 
+    uses: ./.github/workflows/frontend-ci.yaml
+    secrets: inherit
   
   job-backend-cd:
     needs: job-backend-ci
     uses: ./.github/workflows/backend-cd.yaml
     secrets: inherit
-
-  
-  job-frontend-ci:
-    needs: job-backend-cd
-    uses: ./.github/workflows/frontend-ci.yaml
-    secrets: inherit
-
-  
+    
   job-frontend-cd:
-    needs: job-frontend-ci
+    needs: [job-frontend-ci, job-frontend-cd]
     uses: ./.github/workflows/frontend-cd.yaml
     secrets: inherit
 

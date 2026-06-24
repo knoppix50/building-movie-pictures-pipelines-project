@@ -54,6 +54,9 @@ jobs:
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Validate Docker image build (Dry run)
-        run: echo "The code compiles correctly in Docker."
+      - name: Validate Docker image build.
+        run: | 
+          cd starter/backend
+          docker build -t backend-test .
+          echo "The code compiles correctly in Docker."
 

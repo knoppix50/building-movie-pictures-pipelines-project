@@ -52,6 +52,8 @@ jobs:
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v4
-      - name: Validate Docker image build (Dry Run)
-        run: echo "The frontend compiles successfully in Docker."
+      - name: Validate Docker image build.
+        run: |
+          cd starter/frontend
+          docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost -t frontend-test .
 

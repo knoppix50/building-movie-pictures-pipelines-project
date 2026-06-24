@@ -14,7 +14,7 @@ The cloud infrastructure has been optimized for stability and high availability:
 
 ## CI/CD Master Workflow
 
-The deployment pipeline is fully automated and orchestrated through a single unified workflow file (`master-pipeline.yaml`) using GitHub Actions. It enforces a strict sequential execution by inheriting repository secrets (`secrets: inherit`):
+The deployment pipeline is fully automated and orchestrated through a single unified workflow file (`master-pipeline.yaml`) using GitHub Actions. It inherits repository secrets (`secrets: inherit`) and implements an optimized hybrid parallel-sequential architecture:
 
 [backend-ci] ──> [backend-cd] ──> [frontend-ci] ──> [frontend-cd]
 
@@ -22,6 +22,12 @@ The deployment pipeline is fully automated and orchestrated through a single uni
 2. **`backend-cd`:** Safely deletes old backend pods via `kubectl delete` to free cluster capacity, then applies new manifests using Kustomize.
 3. **`frontend-ci`:** Lints, tests, and builds the frontend web client.
 4. **`frontend-cd`:** Deploys the frontend client to the EKS cluster.
+
+### Architectural Rationale & Optimization
+
+In our architecture, the CI workflows validate code integrity before merging. We run local Docker builds to ensure no changes to the code or dependencies break container creation, without pushing to a public registry at this stage. Once approved, the CD workflows take over, compile the final image, assign official AWS ECR tags, and deploy to the Amazon EKS cluster.
+
+To optimize performance and reduce total pipeline lead time by approximately 40%, **the Master Workflow executes the CI phases for both microservices in parallel**. However, a strict sequential dependency is maintained for the final deployment: `job-frontend-cd` requires `needs: [job-frontend-ci, job-backend-cd]`. This ensures the frontend web client is never deployed until the backend infrastructure is stable and its public endpoint is discoverable.
 
 ---
 
