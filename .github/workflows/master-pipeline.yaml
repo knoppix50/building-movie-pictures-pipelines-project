@@ -22,7 +22,7 @@ jobs:
     secrets: inherit
     
   job-frontend-cd:
-    needs: [job-frontend-ci, job-frontend-cd]
+    needs: [job-frontend-ci, job-backend-cd]
     uses: ./.github/workflows/frontend-cd.yaml
     secrets: inherit
 
