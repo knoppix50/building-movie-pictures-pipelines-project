@@ -58,5 +58,5 @@ jobs:
         run: | 
           cd starter/backend
           docker build -t backend-test .
-          echo "The code compiles correctly in Docker."
+
 
